@@ -1,0 +1,2 @@
+#!/bin/bash
+/usr/src/linux-headers-4.15.0-29/scripts/checkpatch.pl --no-tree $@

@@ -1,0 +1,34 @@
+# 阶段总结
+
+- insmod
+- modprobe
+- rmmod
+- #include <linux/init.h>
+- module_init(init_function)
+- module_exit(cleanup_function)
+- module_param(var, type, perm)
+- __init
+- __initdata
+- __exit
+- __exitdata
+- #include <linux/sched.h>
+- struct task_struct *current;
+- current->pid
+- current->comm
+- obj-m
+- /sys/module
+- /proc/modules
+- vermagic.o
+- #include <linux/module.h>
+- #include <linux/version.h>
+- LINUX_VERSION_CODE
+- EXPORT_SYMBOL(symbol)
+- EXPORT_SYMBOL_GPL(symbol)
+- MODULE_AUTHOR(author)
+- MODULE_DESCRIPTION(descriptor)
+- MODULE_VERSION(version_string)
+- MODULE_DEVICE_TABLE(table_info)
+- MODULE_ALIAS(alternate_name)
+- #include <linux/moduleparam.h>
+- #include <linux/kernel.h>
+- int printk(const char *fmt, ...)
