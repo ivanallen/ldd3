@@ -27,7 +27,7 @@ https://gitee.com/ivan_allen/myvim
 ## 2. 安装
 
 ```shell
-# 这里设备你的工作目录
+# 这里设置你的工作目录
 > export LDD3_WORK_DIR=~/work/ldd3
 > ./INSTALL.sh
 > source ~/.bashrc

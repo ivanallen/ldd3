@@ -1,2 +1,2 @@
 #!/bin/bash
-/usr/src/linux-headers-4.15.0-29/scripts/checkpatch.pl --no-tree $@
+/usr/src/linux-headers-4.15.0-29/scripts/checkpatch.pl --no-tree --show-types --ignore PREFER_PR_LEVEL,LONG_LINE $@
