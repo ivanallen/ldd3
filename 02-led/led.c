@@ -31,15 +31,15 @@ static void close_led(void);
 
 struct led_dev {
     int state;
-	struct cdev cdev;
+    struct cdev cdev;
 };
 
 static const struct file_operations led_fops = {
-	.owner = THIS_MODULE,
-	.open = led_open,
-	.release = led_release,
-	.read = led_read,
-	.write = led_write,
+    .owner = THIS_MODULE,
+    .open = led_open,
+    .release = led_release,
+    .read = led_read,
+    .write = led_write,
 };
 
 static void open_led(void) {
@@ -52,28 +52,28 @@ static void close_led(void) {
 
 static void led_setup_cdev(struct led_dev *dev, int index)
 {
-	/*
-	 * struct cdev {
-	 *     struct kobject kobj;
-	 *     struct module *owner;
-	 *     const struct file_operations *ops;
-	 *     struct list_head list;
-	 *     dev_t dev;
-	 *     unsigned int count;
-	 * };
-	 */
-	int err, devno;
+    /*
+     * struct cdev {
+     *     struct kobject kobj;
+     *     struct module *owner;
+     *     const struct file_operations *ops;
+     *     struct list_head list;
+     *     dev_t dev;
+     *     unsigned int count;
+     * };
+     */
+    int err, devno;
 
-	devno = MKDEV(231, index);
-	register_chrdev_region(devno, 1, "myled");
+    devno = MKDEV(231, index);
+    register_chrdev_region(devno, 1, "myled");
 
-	/*
-	 * 初始化 cdev，并填充 struct file_operations
-	 * 为什么不自己给成员赋值？因为 cdev_init 会
-	 * 初始化 list 以及 kobj 字段。
-	 */
-	cdev_init(&dev->cdev, &led_fops);
-	dev->cdev.owner = THIS_MODULE;
+    /*
+     * 初始化 cdev，并填充 struct file_operations
+     * 为什么不自己给成员赋值？因为 cdev_init 会
+     * 初始化 list 以及 kobj 字段。
+     */
+    cdev_init(&dev->cdev, &led_fops);
+    dev->cdev.owner = THIS_MODULE;
     dev->state = 0;
     
     // 设置 GPIO0 为 output 模式
@@ -82,42 +82,42 @@ static void led_setup_cdev(struct led_dev *dev, int index)
     iowrite32(0x01, GPIO_PUP_PDN_CNTRL_REG0);
     close_led();
 
-	/*
-	 * 添加字段设备到系统。(主要是将设备加
-	 * 到内核中的 cdev_map 中，这是一个全局变量)
-	 *
-	 * 第 3 个参数表示连续的次设备号的个数
-	 */
-	err = cdev_add(&dev->cdev, devno, 1);
-	if (err)
-		printk(KERN_ERR "error %d adding led%d\n", err, index);
+    /*
+     * 添加字段设备到系统。(主要是将设备加
+     * 到内核中的 cdev_map 中，这是一个全局变量)
+     *
+     * 第 3 个参数表示连续的次设备号的个数
+     */
+    err = cdev_add(&dev->cdev, devno, 1);
+    if (err)
+        printk(KERN_ERR "error %d adding led%d\n", err, index);
 }
 
 static int led_open(struct inode *inode, struct file *filp)
 {
-	struct led_dev *dev;
+    struct led_dev *dev;
 
-	/*
-	 * 问题：如果知道某结构体成员字段地址，
-	 * 能否知道该结构体首地址呢？
-	 *
-	 * container_of 就是做这样一件事，它可以
-	 * 依据成员字段的地址来推算结构体的首地址。如：
-	 * 已经 struct led_dev 的成员 cdev 的地址
-	 * 是 p，则 struct led_dev 结构体的首地址
-	 * 是 container_of(p, struct led_dev, cdev)
-	 *
-	 * 其实现也相当巧妙，可参阅内核代码
-	 */
-	dev = container_of(inode->i_cdev, struct led_dev, cdev);
-	filp->private_data = dev;
-	printk(KERN_ALERT "led open\n");
-	return 0;
+    /*
+     * 问题：如果知道某结构体成员字段地址，
+     * 能否知道该结构体首地址呢？
+     *
+     * container_of 就是做这样一件事，它可以
+     * 依据成员字段的地址来推算结构体的首地址。如：
+     * 已经 struct led_dev 的成员 cdev 的地址
+     * 是 p，则 struct led_dev 结构体的首地址
+     * 是 container_of(p, struct led_dev, cdev)
+     *
+     * 其实现也相当巧妙，可参阅内核代码
+     */
+    dev = container_of(inode->i_cdev, struct led_dev, cdev);
+    filp->private_data = dev;
+    printk(KERN_ALERT "led open\n");
+    return 0;
 }
 
 static int led_release(struct inode *inode, struct file *filp)
 {
-	return 0;
+    return 0;
 }
 
 /*
@@ -126,12 +126,12 @@ static int led_release(struct inode *inode, struct file *filp)
  */
 static int led_read(struct file *filp, char __user *buff, size_t count, loff_t *offp)
 {
-	struct led_dev *dev;
+    struct led_dev *dev;
 
-	dev = filp->private_data;
+    dev = filp->private_data;
 
-	if (count == 0)
-		return 0;
+    if (count == 0)
+        return 0;
 
     if (count < 3) {
         return 0;
@@ -145,23 +145,23 @@ static int led_read(struct file *filp, char __user *buff, size_t count, loff_t *
         count = 2;
     }
 
-	return count;
+    return count;
 }
 
 static ssize_t led_write(struct file *filp, const char __user *buff, size_t count, loff_t *offp)
 {
-	struct led_dev *dev;
+    struct led_dev *dev;
     char buf[16] = { 0 };
 
-	dev = filp->private_data;
+    dev = filp->private_data;
 
-	if (count > MAX_BUF_SIZE)
+    if (count > MAX_BUF_SIZE)
         return 0;
 
-	if (count == 0)
-		return 0;
+    if (count == 0)
+        return 0;
 
-	copy_from_user(buf, buff, count);
+    copy_from_user(buf, buff, count);
 
     if (strncmp("on", buf, MAX_BUF_SIZE) == 0) {
         open_led();
@@ -171,7 +171,7 @@ static ssize_t led_write(struct file *filp, const char __user *buff, size_t coun
         dev->state = 0;
     }
 
-	return count;
+    return count;
 }
 
 /*
@@ -189,28 +189,28 @@ static ssize_t led_write(struct file *filp, const char __user *buff, size_t coun
  */
 static int __init led_init(void)
 {
-	/*
-	 * KERN_ALERT 表示消息的优先级，
-	 * 定义参考最底部的注释
-	 */
-	printk(KERN_ALERT "led init\n");
-	led_device = kmalloc(sizeof(struct led_dev), GFP_KERNEL);
-	led_setup_cdev(led_device, 0);
-	return 0;
+    /*
+     * KERN_ALERT 表示消息的优先级，
+     * 定义参考最底部的注释
+     */
+    printk(KERN_ALERT "led init\n");
+    led_device = kmalloc(sizeof(struct led_dev), GFP_KERNEL);
+    led_setup_cdev(led_device, 0);
+    return 0;
 }
 
 /* 模块卸载时调用 */
 static void __exit led_exit(void)
 {
-	dev_t devno;
+    dev_t devno;
 
-	if (led_device != NULL) {
-		kfree(led_device);
-	}
+    if (led_device != NULL) {
+        kfree(led_device);
+    }
 
-	devno = MKDEV(231, 0);
-	unregister_chrdev_region(devno, 1);
-	printk(KERN_ALERT "led exit\n");
+    devno = MKDEV(231, 0);
+    unregister_chrdev_region(devno, 1);
+    printk(KERN_ALERT "led exit\n");
 }
 
 /*
@@ -222,12 +222,12 @@ module_init(led_init);
 module_exit(led_exit);
 
 /*
- * #define	KERN_EMERG	"<0>"
- * #define	KERN_ALERT	"<1>"
- * #define	KERN_CRIT	"<2>"
- * #define	KERN_ERR	"<3>"
- * #define	KERN_WARNING	"<4>"
- * #define	KERN_NOTICE	"<5>"
- * #define	KERN_INFO	"<6>"
- * #define	KERN_DEBUG	"<7>"
+ * #define  KERN_EMERG  "<0>"
+ * #define  KERN_ALERT  "<1>"
+ * #define  KERN_CRIT   "<2>"
+ * #define  KERN_ERR    "<3>"
+ * #define  KERN_WARNING    "<4>"
+ * #define  KERN_NOTICE "<5>"
+ * #define  KERN_INFO   "<6>"
+ * #define  KERN_DEBUG  "<7>"
  */

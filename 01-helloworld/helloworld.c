@@ -21,18 +21,18 @@ MODULE_LICENSE("Dual BSD/GPL");
  */
 static int __init hello_init(void)
 {
-	/*
-	 * KERN_ALERT 表示消息的优先级，
-	 * 定义参考最底部的注释
-	 */
-	printk(KERN_ALERT "hello world:%s\n", "allen");
-	return 0;
+    /*
+     * KERN_ALERT 表示消息的优先级，
+     * 定义参考最底部的注释
+     */
+    printk(KERN_ALERT "hello world:%s\n", "allen");
+    return 0;
 }
 
 /* 模块卸载时调用 */
 static void __exit hello_exit(void)
 {
-	printk(KERN_ALERT "hello world:%s\n", "exit");
+    printk(KERN_ALERT "hello world:%s\n", "exit");
 }
 
 /*
@@ -44,12 +44,12 @@ module_init(hello_init);
 module_exit(hello_exit);
 
 /*
- * #define	KERN_EMERG	"<0>"
- * #define	KERN_ALERT	"<1>"
- * #define	KERN_CRIT	"<2>"
- * #define	KERN_ERR	"<3>"
- * #define	KERN_WARNING	"<4>"
- * #define	KERN_NOTICE	"<5>"
- * #define	KERN_INFO	"<6>"
- * #define	KERN_DEBUG	"<7>"
+ * #define  KERN_EMERG  "<0>"
+ * #define  KERN_ALERT  "<1>"
+ * #define  KERN_CRIT   "<2>"
+ * #define  KERN_ERR    "<3>"
+ * #define  KERN_WARNING    "<4>"
+ * #define  KERN_NOTICE "<5>"
+ * #define  KERN_INFO   "<6>"
+ * #define  KERN_DEBUG  "<7>"
  */
