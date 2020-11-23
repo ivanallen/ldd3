@@ -1,5 +1,6 @@
 /* 包含大量的符号和函数定义 */
 #include <linux/module.h>
+#include <linux/fs.h>
 /* 初始化和清除函数，但不包含也不出错 */
 #include <linux/init.h>
 #include <linux/cdev.h>
@@ -13,10 +14,10 @@ MODULE_LICENSE("Dual BSD/GPL");
 /*
  * 这里这个数字是从树莓派手册上查的，表示 GPIO 控制寄存器。
  */
-#define GPIO_PUP_PDN_CNTRL_REG0 (void*)0x7e2000e4
-#define GPFSEL0 (void*)0x7e200000
-#define GPFSET0 (void*)0x7e20001c
-#define GPFCLR0 (void*)0x7e200028
+#define GPIO_PUP_PDN_CNTRL_REG0 0xfe2000e4
+#define GPFSEL0 0xfe200000
+#define GPFSET0 0xfe20001c
+#define GPFCLR0 0xfe200028
 #define MAX_BUF_SIZE 16
 
 struct led_dev *led_device;
@@ -24,7 +25,7 @@ struct led_dev *led_device;
 static void led_setup_cdev(struct led_dev *dev, int index);
 static int led_open(struct inode *inode, struct file *filp);
 static int led_release(struct inode *inode, struct file *filp);
-static int led_read(struct file *filp, char __user *buff, size_t count, loff_t *offp);
+static ssize_t led_read(struct file *filp, char __user *buff, size_t count, loff_t *offp);
 static ssize_t led_write(struct file *filp, const char __user *buff, size_t count, loff_t *offp);
 static void open_led(void);
 static void close_led(void);
@@ -43,11 +44,11 @@ static const struct file_operations led_fops = {
 };
 
 static void open_led(void) {
-    iowrite32(1, GPFSET0);
+    iowrite32(1, ioremap(GPFSET0, 4));
 }
 
 static void close_led(void) {
-    iowrite32(1, GPFCLR0);
+    iowrite32(1, ioremap(GPFCLR0, 4));
 }
 
 static void led_setup_cdev(struct led_dev *dev, int index)
@@ -77,9 +78,9 @@ static void led_setup_cdev(struct led_dev *dev, int index)
     dev->state = 0;
     
     // 设置 GPIO0 为 output 模式
-    iowrite32(1, GPFSEL0);
+    iowrite32(1, ioremap(GPFSEL0, 4));
     // 设置 GPIO0 为下拉模式
-    iowrite32(0x01, GPIO_PUP_PDN_CNTRL_REG0);
+    iowrite32(0x01, ioremap(GPIO_PUP_PDN_CNTRL_REG0, 4));
     close_led();
 
     /*
@@ -124,7 +125,7 @@ static int led_release(struct inode *inode, struct file *filp)
  * 宏 __user 被定义为空，实际上就是一个标记,
  * 告诉你 buff 是用户空间地址，你需要小心
  */
-static int led_read(struct file *filp, char __user *buff, size_t count, loff_t *offp)
+static ssize_t led_read(struct file *filp, char __user *buff, size_t count, loff_t *offp)
 {
     struct led_dev *dev;
 
