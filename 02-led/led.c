@@ -1,3 +1,4 @@
+/* 此代码仅适用于树莓派 4B */
 /* 包含大量的符号和函数定义 */
 #include <linux/module.h>
 #include <linux/fs.h>
@@ -14,8 +15,8 @@ MODULE_LICENSE("Dual BSD/GPL");
 /*
  * 这里这个数字是从树莓派手册上查的，表示 GPIO 控制寄存器。
  */
-#define GPIO_PUP_PDN_CNTRL_REG0 0xfe2000e4
-#define GPFSEL0 0xfe200000
+#define GPIO_PUP_PDN_CNTRL_REG1 0xfe2000e8
+#define GPFSEL1 0xfe200004
 #define GPFSET0 0xfe20001c
 #define GPFCLR0 0xfe200028
 #define MAX_BUF_SIZE 16
@@ -44,11 +45,11 @@ static const struct file_operations led_fops = {
 };
 
 static void open_led(void) {
-    iowrite32(1, ioremap(GPFSET0, 4));
+    iowrite32(1 << 18, ioremap(GPFCLR0, 4));
 }
 
 static void close_led(void) {
-    iowrite32(1, ioremap(GPFCLR0, 4));
+    iowrite32(1 << 18, ioremap(GPFSET0, 4));
 }
 
 static void led_setup_cdev(struct led_dev *dev, int index)
@@ -78,9 +79,9 @@ static void led_setup_cdev(struct led_dev *dev, int index)
     dev->state = 0;
     
     // 设置 GPIO0 为 output 模式
-    iowrite32(1, ioremap(GPFSEL0, 4));
+    iowrite32(0x001 << 24, ioremap(GPFSEL1, 4));
     // 设置 GPIO0 为下拉模式
-    iowrite32(0x01, ioremap(GPIO_PUP_PDN_CNTRL_REG0, 4));
+    // iowrite32(0x10 << 4, ioremap(GPIO_PUP_PDN_CNTRL_REG1, 4));
     close_led();
 
     /*
