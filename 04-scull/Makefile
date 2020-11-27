@@ -1,10 +1,18 @@
-obj-m=scull.o
+ifneq ($(KERNELRELEASE),)
+	obj-m:=scull.o
+else
+	PWD:=$(shell pwd)
+	LINUX_KERNEL:=$(shell uname -r)
+	LINUX_KERNEL_PATH:=/usr/src/linux-headers-$(LINUX_KERNEL)
 
-all:
-	make -C /lib/modules/$(shell uname -r)/build M=`pwd` modules
+defalut:
+	$(MAKE) -C $(LINUX_KERNEL_PATH) M=$(PWD) modules
 
 clean:
-	make -C /lib/modules/$(shell uname -r)/build M=`pwd` modules clean
-	#find -maxdepth 1 ! \( \( -name '*.c' -and ! -name '*.mod.c' \) -or -iname 'README.md' -or -iname 'Makefile' \) -and ! -name '.' | xargs rm -r
+	$(MAKE) -C $(LINUX_KERNEL_PATH) M=$(PWD) clean
 
-.PHONY:clean
+create:
+	sudo mknod /dev/myscull c 232 0
+	sudo chmod o+rw /dev/myscull
+
+endif
