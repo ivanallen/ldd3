@@ -12,7 +12,9 @@ clean:
 	$(MAKE) -C $(LINUX_KERNEL_PATH) M=$(PWD) clean
 
 create:
-	sudo mknod /dev/myscull c 232 0
-	sudo chmod o+rw /dev/myscull
+	sudo mknod /dev/myscull1 c 232 0
+	sudo mknod /dev/myscull2 c 232 1
+	sudo chmod o+rw /dev/myscull1
+	sudo chmod o+rw /dev/myscull2
 
 endif

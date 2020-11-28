@@ -8,7 +8,7 @@
 
 struct scull_dev *scull_device;
 
-static void scull_setup_cdev(struct scull_dev *dev, int index);
+static void scull_setup_cdev(struct scull_dev *dev);
 static int scull_open(struct inode *inode, struct file *filp);
 static int scull_release(struct inode *inode, struct file *filp);
 static ssize_t scull_read(struct file *filp, char __user *buff, size_t count, loff_t *offp);
@@ -18,10 +18,10 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Allen");
 
 struct scull_dev {
-    char *buf;
+    char *buf[2];
+    size_t size[2]; /* 当前数据大小 */
     struct cdev cdev;
     dev_t devno;
-    size_t size; /* 当前数据大小 */
 };
 
 static const struct file_operations scull_fops = {
@@ -36,19 +36,23 @@ static int __init scull_init(void)
 {
     printk(KERN_NOTICE "scull init\n");
     scull_device = kmalloc(sizeof(struct scull_dev), GFP_KERNEL);
-    scull_setup_cdev(scull_device, 0);
+    scull_setup_cdev(scull_device);
     return 0;
 }
 
 static void __exit scull_exit(void)
 {
+    int i;
+
     if (scull_device != NULL) {
         cdev_del(&scull_device->cdev);
-        unregister_chrdev_region(scull_device->devno, 1);
+        unregister_chrdev_region(scull_device->devno, 10);
 
-        if (scull_device->buf != NULL) {
-            kfree(scull_device->buf);
-            scull_device->buf = NULL;
+        for (i = 0; i < 2; ++i) {
+            if (scull_device->buf[i] != NULL) {
+                kfree(scull_device->buf[i]);
+                scull_device->buf[i] = NULL;
+            }
         }
         kfree(scull_device);
     }
@@ -56,7 +60,7 @@ static void __exit scull_exit(void)
     printk(KERN_NOTICE "scull exit\n");
 }
 
-static void scull_setup_cdev(struct scull_dev *dev, int index)
+static void scull_setup_cdev(struct scull_dev *dev)
 {
     /*
      * struct cdev {
@@ -70,8 +74,10 @@ static void scull_setup_cdev(struct scull_dev *dev, int index)
      */
     int err, devno;
 
-    devno = MKDEV(232, index);
-    register_chrdev_region(devno, 1, "scull");
+    devno = MKDEV(232, 0);
+    if (register_chrdev_region(devno, 2, "scull")) {
+        printk(KERN_NOTICE "register chrdev error\n");
+    }
 
     /*
      * 初始化 cdev，并填充 struct file_operations
@@ -85,26 +91,28 @@ static void scull_setup_cdev(struct scull_dev *dev, int index)
      * 第一个参数表示分配内存大小，
      * 第二个暂时写固定值
      */
-    dev->buf = kmalloc(MAX_BUF_SIZE, GFP_KERNEL);
-    dev->size = 0;
+    dev->buf[0] = kmalloc(MAX_BUF_SIZE, GFP_KERNEL);
+    dev->size[0] = 0;
+    dev->buf[1] = kmalloc(MAX_BUF_SIZE, GFP_KERNEL);
+    dev->size[1] = 0;
     dev->devno = devno;
 
     /*
      * 添加字段设备到系统。(主要是将设备加
      * 到内核中的 cdev_map 中，这是一个全局变量)
      *
-     * 第 3 个参数表示连续的次设备号的个数
+     * 第 3 个参数表示连续的设备号的个数
      */
-    err = cdev_add(&dev->cdev, devno, 1);
+    err = cdev_add(&dev->cdev, devno, 2);
     if (err)
-        printk(KERN_ERR "error %d adding scull%d\n", err, index);
+        printk(KERN_ERR "error %d adding scull\n", err);
 }
 
 static int scull_open(struct inode *inode, struct file *filp)
 {
     struct scull_dev *dev;
 
-    printk(KERN_NOTICE "scull_open\n");
+    printk(KERN_NOTICE "scull_open:(%u, %u)\n", MAJOR(inode->i_rdev), MINOR(inode->i_rdev));
     /*
      * 问题：如果知道某结构体成员字段地址，
      * 能否知道该结构体首地址呢？
@@ -124,7 +132,9 @@ static int scull_open(struct inode *inode, struct file *filp)
 
 static int scull_release(struct inode *inode, struct file *filp)
 {
-    printk(KERN_NOTICE "scull_release\n");
+    size_t major = MAJOR(inode->i_rdev);
+    size_t minor = MINOR(inode->i_rdev);
+    printk(KERN_NOTICE "scull_release:(%u, %u)\n", major, minor);
     return 0;
 }
 
@@ -136,20 +146,21 @@ static ssize_t scull_read(struct file *filp, char __user *buff, size_t count, lo
 {
     struct scull_dev *dev;
     loff_t offset;
+    size_t minor = MINOR(filp->f_inode->i_rdev);
 
     dev = filp->private_data;
     offset = *offp;
 
-    printk(KERN_NOTICE "[%s] user buff address:%p kernel buff address:%p, f_count:%d, f_pos:%llu, off:%llu count:%u, dev->size:%u\n",
-            __func__, buff, dev->buf, filp->f_count.counter, filp->f_pos, offset, count, dev->size);
+    printk(KERN_NOTICE "[%s] user buff address:%p kernel buff address:%p, f_count:%d, f_pos:%llu, off:%llu count:%u, minor:%u, dev->size:%u\n",
+            __func__, buff, dev->buf[minor], filp->f_count.counter, filp->f_pos, offset, count, minor, dev->size[minor]);
 
-    if (offset + count >= dev->size)
-        count = dev->size - offset;
+    if (offset + count >= dev->size[minor])
+        count = dev->size[minor] - offset;
 
     if (count == 0)
         return 0;
 
-    if (copy_to_user(buff, dev->buf + offset, count)) {
+    if (copy_to_user(buff, dev->buf[minor] + offset, count)) {
         return -EFAULT;
     }
 
@@ -162,16 +173,17 @@ static ssize_t scull_write(struct file *filp, const char __user *buff, size_t co
 {
     struct scull_dev *dev;
     loff_t offset;
+    size_t minor = MINOR(filp->f_inode->i_rdev);
 
     dev = filp->private_data;
     /*
      * 更新 *off 到缓冲区的尾部
      */
-    *offp = dev->size;
+    *offp = dev->size[minor];
     offset = *offp;
 
-    printk(KERN_NOTICE "[%s] user buff address:%p kernel buff address:%p, f_count:%d, f_pos:%llu, off:%llu count:%u, dev->size:%u\n",
-            __func__, buff, dev->buf, filp->f_count.counter, filp->f_pos, offset, count, dev->size);
+    printk(KERN_NOTICE "[%s] user buff address:%p kernel buff address:%p, f_count:%d, f_pos:%llu, off:%llu count:%u, minor:%u, dev->size:%u\n",
+            __func__, buff, dev->buf[minor], filp->f_count.counter, filp->f_pos, offset, count, minor, dev->size[minor]);
 
     if (offset + count > MAX_BUF_SIZE)
         count = MAX_BUF_SIZE - offset;
@@ -181,12 +193,12 @@ static ssize_t scull_write(struct file *filp, const char __user *buff, size_t co
         return -EAGAIN;
     }
 
-    if (copy_from_user(dev->buf + offset, buff, count)) {
+    if (copy_from_user(dev->buf[minor] + offset, buff, count)) {
         return -EFAULT;
     }
     *offp += count;
 
-    dev->size += count;
+    dev->size[minor] += count;
     return count;
 }
 
