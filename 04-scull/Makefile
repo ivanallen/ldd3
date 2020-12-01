@@ -11,10 +11,18 @@ defalut:
 clean:
 	$(MAKE) -C $(LINUX_KERNEL_PATH) M=$(PWD) clean
 
-create:
-	sudo mknod /dev/myscull1 c 232 0
-	sudo mknod /dev/myscull2 c 232 1
+node:
+	sudo rm -rf /dev/myscull0
+	sudo rm -rf /dev/myscull1
+	sudo mknod /dev/myscull0 c 232 0
+	sudo mknod /dev/myscull1 c 232 1
+	sudo chmod o+rw /dev/myscull0
 	sudo chmod o+rw /dev/myscull1
-	sudo chmod o+rw /dev/myscull2
+
+ins:
+	sudo insmod scull.ko
+
+rm:
+	sudo rmmod scull
 
 endif
