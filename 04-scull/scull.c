@@ -112,7 +112,10 @@ static int scull_open(struct inode *inode, struct file *filp)
 {
     struct scull_dev *dev;
 
-    printk(KERN_NOTICE "scull_open:(%u, %u)\n", MAJOR(inode->i_rdev), MINOR(inode->i_rdev));
+    size_t major = MAJOR(inode->i_rdev);
+    size_t minor = MINOR(inode->i_rdev);
+
+    printk(KERN_NOTICE "scull_open:(%u, %u)\n", major, minor);
     /*
      * 问题：如果知道某结构体成员字段地址，
      * 能否知道该结构体首地址呢？
@@ -127,6 +130,12 @@ static int scull_open(struct inode *inode, struct file *filp)
      */
     dev = container_of(inode->i_cdev, struct scull_dev, cdev);
     filp->private_data = dev;
+    
+    printk(KERN_NOTICE "f_mode:%u\n", filp->f_flags);
+    if (filp->f_flags & O_WRONLY) {
+        printk(KERN_NOTICE "O_WRONLY is set\n");
+        dev->size[minor] = 0;
+    }
     return 0;
 }
 
@@ -146,7 +155,7 @@ static ssize_t scull_read(struct file *filp, char __user *buff, size_t count, lo
 {
     struct scull_dev *dev;
     loff_t offset;
-    size_t minor = MINOR(filp->f_inode->i_rdev);
+    size_t minor = iminor(filp->f_inode);
 
     dev = filp->private_data;
     offset = *offp;
@@ -176,10 +185,6 @@ static ssize_t scull_write(struct file *filp, const char __user *buff, size_t co
     size_t minor = MINOR(filp->f_inode->i_rdev);
 
     dev = filp->private_data;
-    /*
-     * 更新 *off 到缓冲区的尾部
-     */
-    *offp = dev->size[minor];
     offset = *offp;
 
     printk(KERN_NOTICE "[%s] user buff address:%p kernel buff address:%p, f_count:%d, f_pos:%llu, off:%llu count:%u, minor:%u, dev->size:%u\n",
