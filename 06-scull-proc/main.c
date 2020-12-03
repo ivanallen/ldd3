@@ -39,7 +39,7 @@ static const struct file_operations scull_fops = {
 
 static const struct file_operations scull_proc_ops = {
     .owner = THIS_MODULE,
-    .open = scull_proc_open, 
+    .open = scull_proc_open,
     .read = seq_read,
     .llseek = seq_lseek,
     .release = seq_release
@@ -49,7 +49,7 @@ static struct seq_operations scull_seq_ops = {
     .start = scull_seq_start,
     .next = scull_seq_next,
     .stop = scull_seq_stop,
-    .show = scull_seq_show 
+    .show = scull_seq_show
 };
 
 int scull_proc_open(struct inode *inode, struct file *file)
