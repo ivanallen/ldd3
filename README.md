@@ -31,7 +31,7 @@ https://gitee.com/ivan_allen/myvim
 在你的新文件夹下执行下面的命令，自动生成程序。
 
 ```
-$ toos/initmod helloworld
+$ tools/initmod helloworld
 ```
 
 ## 3. 安装

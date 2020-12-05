@@ -11,6 +11,8 @@ int scull_nr_devs = SCULL_NR_DEVS;
 int scull_major = SCULL_MAJOR;
 int scull_minor = SCULL_MINOR;
 
+struct scull_dev *scull_devices;
+
 int scull_trim(struct scull_dev *dev)
 {
     struct scull_qset *q = NULL;

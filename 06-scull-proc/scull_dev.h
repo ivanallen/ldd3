@@ -1,3 +1,5 @@
+#pragma once
+
 #include <linux/semaphore.h>
 #include <linux/cdev.h>
 
@@ -31,6 +33,8 @@ struct scull_dev {
     struct semaphore sem; /* 互斥信号量，暂且忽略 */
     struct cdev cdev; /* 设备对象，你已经很熟悉了 */
 };
+
+extern struct scull_dev *scull_devices;
 
 int scull_trim(struct scull_dev *dev);
 void scull_setup_cdev(struct scull_dev *dev, int index, const struct file_operations *scull_fops);

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <linux/semaphore.h>
 #include <linux/cdev.h>
 

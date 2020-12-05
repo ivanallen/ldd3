@@ -1,5 +1,5 @@
 ifneq ($(KERNELRELEASE),)
-	scull-objs:=main.o scull_dev.o
+	scull-objs:=main.o scull_dev.o scull_proc.o
 	obj-m:=scull.o
 else
 	PWD:=$(shell pwd)
