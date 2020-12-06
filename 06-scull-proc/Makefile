@@ -14,7 +14,6 @@ clean:
 	$(MAKE) -C $(LINUX_KERNEL_PATH) M=$(PWD) clean
 
 node:
-	sudo rm -rf /dev/myscull*
 	sudo mknod /dev/myscull0 c 231 0
 	sudo mknod /dev/myscull1 c 231 1
 	sudo mknod /dev/myscull2 c 231 2
@@ -29,5 +28,6 @@ ins:
 
 rm:
 	sudo rmmod scull
+	sudo rm -rf /dev/myscull*
 
 endif

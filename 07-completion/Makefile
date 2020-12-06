@@ -1,5 +1,5 @@
 ifneq ($(KERNELRELEASE),)
-	obj-m:={{ MOD_NAME }}.o
+	obj-m:=completion.o
 else
 	PWD:=$(shell pwd)
 	LINUX_KERNEL:=$(shell uname -r)
@@ -12,14 +12,13 @@ clean:
 	$(MAKE) -C $(LINUX_KERNEL_PATH) M=$(PWD) clean
 
 ins:
-	sudo insmod {{ MOD_NAME }}.ko
-
-rm:
-	sudo rmmod {{ MOD_NAME }}
+	sudo insmod completion.ko
 
 node:
-	sudo rm -rf /dev/{{ MOD_NAME }}_device
-	sudo mknod /dev/{{ MOD_NAME }}_device c 231 0
-	sudo chmod o+rw /dev/{{ MOD_NAME }}_device
+	sudo mknod /dev/completion_device c 231 0
+	sudo chmod o+rw /dev/completion_device
 
+rm:
+	sudo rm -rf /dev/completion_device
+	sudo rmmod completion
 endif
