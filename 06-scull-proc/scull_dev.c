@@ -24,21 +24,21 @@ int scull_trim(struct scull_dev *dev)
 
     j = 0;
     for (q = dev->data; q; q = next, ++j) {
-        printk(KERN_NOTICE "trim qset:%p", q);
+        printk(KERN_NOTICE "trim qset:%px", q);
         next = q->next;
 
         if (q->data) {
             for (i = 0; i < qset; ++i) {
                 if (q->data[i]) {
-                    printk(KERN_NOTICE "free quantum:%d address:%p\n", i, q->data[i]);
+                    printk(KERN_NOTICE "free quantum:%d address:%px\n", i, q->data[i]);
                     kfree(q->data[i]);
                 }
             }
-            printk(KERN_NOTICE "free qset data address:%p\n", q->data);
+            printk(KERN_NOTICE "free qset data address:%px\n", q->data);
             kfree(q->data);
         }
 
-        printk(KERN_NOTICE "free qset:%d address:%p\n", j, q);
+        printk(KERN_NOTICE "free qset:%d address:%px\n", j, q);
         kfree(q);
     }
 
@@ -129,7 +129,7 @@ ssize_t scull_read(struct file *filp, char __user *buff, size_t count, loff_t *o
 
     offset = *offp;
 
-    printk(KERN_NOTICE "[%s] user buff address:%p f_count:%d, f_pos:%llu, off:%llu, count:%u, minor:%u\n",
+    printk(KERN_NOTICE "[%s] user buff address:%px f_count:%d, f_pos:%llu, off:%llu, count:%u, minor:%u\n",
             __func__, buff, filp->f_count.counter, filp->f_pos, offset, count, minor);
 
     do {
@@ -213,7 +213,7 @@ ssize_t scull_write(struct file *filp, const char __user *buff, size_t count, lo
 
     offset = *offp;
 
-    printk(KERN_NOTICE "[%s] user buff address:%p, f_count:%d, f_pos:%llu, off:%llu count:%u, minor:%u\n",
+    printk(KERN_NOTICE "[%s] user buff address:%px, f_count:%d, f_pos:%llu, off:%llu count:%u, minor:%u\n",
             __func__, buff, filp->f_count.counter, filp->f_pos, offset, count, minor);
 
     do {
@@ -233,7 +233,7 @@ ssize_t scull_write(struct file *filp, const char __user *buff, size_t count, lo
             q->data = kmalloc(qset * sizeof(char *), GFP_KERNEL);
             if (!q->data)
                 break;
-            printk(KERN_NOTICE "malloc qset data:%p\n", q->data);
+            printk(KERN_NOTICE "malloc qset data:%px\n", q->data);
             memset(q->data, 0, qset * sizeof(char *));
         }
 
@@ -241,7 +241,7 @@ ssize_t scull_write(struct file *filp, const char __user *buff, size_t count, lo
             q->data[j] = kmalloc(quantum, GFP_KERNEL);
             if (!q->data[j])
                 break;
-            printk(KERN_NOTICE "malloc quantum:%p\n", q->data[j]);
+            printk(KERN_NOTICE "malloc quantum:%px\n", q->data[j]);
             memset(q->data[j], 0, quantum);
         }
 
@@ -275,13 +275,13 @@ struct scull_qset *scull_follow(struct scull_dev *dev, int index)
             return NULL;
         dev->data = q;
         memset(q, 0, sizeof(struct scull_qset));
-        printk(KERN_NOTICE "malloc first qset:%p qset->next:%p", q, q->next);
+        printk(KERN_NOTICE "malloc first qset:%px qset->next:%px", q, q->next);
     }
 
     while (index--) {
         if (!q->next) {
             q->next = kmalloc(sizeof(struct scull_qset), GFP_KERNEL);
-            printk(KERN_NOTICE "malloc new qset:%p", q->next);
+            printk(KERN_NOTICE "malloc new qset:%px", q->next);
             if (!q->next)
                 return NULL;
             memset(q->next, 0, sizeof(struct scull_qset));

@@ -48,7 +48,7 @@ int scull_seq_show(struct seq_file *s, void *v)
            (int)(device - scull_devices), device->qset, device->quantum, device->size); 
 
     for (q = device->data; q; q = next) {
-        seq_printf(s, "  item at %p, qset at %p\n", device, device->data);
+        seq_printf(s, "  item at %px, qset at %px\n", device, device->data);
         if (q->data && !q->next)
             for (i = 0; i < device->qset; ++i) {
                 if (q->data[i])
