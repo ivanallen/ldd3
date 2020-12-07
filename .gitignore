@@ -7,3 +7,5 @@
 *.mod.c
 *.cache.mk
 led
+*.swp
+*.d
