@@ -34,15 +34,15 @@ int completion_open(struct inode *inode, struct file *filp)
 
 ssize_t completion_read(struct file *filp, char *buff, size_t count, loff_t *ppos)
 {
-    printk(KERN_NOTICE "process %d(%s) ready to sleep\n", current->pid, current->comm);
+    printk(KERN_NOTICE "process %d(%s) ready to sleep on cpu %d\n", current->pid, current->comm, get_cpu());
     wait_for_completion(&comp);
-    printk(KERN_NOTICE "process %d(%s) awake\n", current->pid, current->comm);
+    printk(KERN_NOTICE "process %d(%s) awake on cpu %d\n", current->pid, current->comm, get_cpu());
     return 0;
 }
 
 ssize_t completion_write(struct file *filp, const char *buff, size_t count, loff_t *ppos)
 {
-    printk(KERN_NOTICE "process %d(%s) awake others\n", current->pid, current->comm);
+    printk(KERN_NOTICE "process %d(%s) awake others on cpu %d\n", current->pid, current->comm, get_cpu());
     complete(&comp);
     /* 这个位置必须返回 count，想想为什么 */
     /* 可能会死循环 */
