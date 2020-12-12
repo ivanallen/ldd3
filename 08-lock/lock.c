@@ -20,8 +20,8 @@ struct process {
 
 ssize_t spinlock_deadlock_read(struct file *filp, char *buff, size_t count, loff_t *ppos);
 ssize_t spinlock_lock_read(struct file *filp, char *buff, size_t count, loff_t *ppos);
-ssize_t spinlock_open(struct inode *inode, struct file *filp);
-ssize_t spinlock_release(struct inode *inode, struct file *filp);
+int spinlock_open(struct inode *inode, struct file *filp);
+int spinlock_release(struct inode *inode, struct file *filp);
 
 struct file_operations spinlock_deadlock_fops = {
     .open = spinlock_open,
@@ -40,12 +40,12 @@ spinlock_t myspinlock;
 
 irqreturn_t button_handler(int irq, void *dev)
 {
-    printk("[%s] process %d(%s) interrupted on cpu %d\n", __func__, current->pid, current->comm, get_cpu());
+    printk("[%s] process %d(%s) interrupted on cpu %d\n", __func__, current->pid, current->comm, smp_processor_id());
     gpio_set_value(LED_PIN, !gpio_get_value(LED_PIN));
     return IRQ_HANDLED;
 }
 
-ssize_t spinlock_open(struct inode *inode, struct file *filp)
+int spinlock_open(struct inode *inode, struct file *filp)
 {
     struct process *p = kmalloc(sizeof(struct process), GFP_KERNEL);
     if (!p)
@@ -56,7 +56,7 @@ ssize_t spinlock_open(struct inode *inode, struct file *filp)
     return 0;
 }
 
-ssize_t spinlock_release(struct inode *inode, struct file *filp)
+int spinlock_release(struct inode *inode, struct file *filp)
 {
     if (filp->private_data)
         kfree(filp->private_data);
@@ -66,13 +66,13 @@ ssize_t spinlock_release(struct inode *inode, struct file *filp)
 
 ssize_t spinlock_deadlock_read(struct file *filp, char *buff, size_t count, loff_t *ppos)
 {
-    printk("[%s] process %d(%s) lock before on cpu %d\n", __func__, current->pid, current->comm, get_cpu());
+    printk("[%s] process %d(%s) lock before on cpu %d\n", __func__, current->pid, current->comm, smp_processor_id());
     spin_lock(&myspinlock);
-    printk("[%s] process %d(%s) locking on cpu %d\n", __func__, current->pid, current->comm, get_cpu());
+    printk("[%s] process %d(%s) locking on cpu %d\n", __func__, current->pid, current->comm, smp_processor_id());
     // 此处会丢弃 cpu
     ssleep(20);
     spin_unlock(&myspinlock);
-    printk("[%s] process %d(%s) unlock after on cpu %d\n", __func__, current->pid, current->comm, get_cpu());
+    printk("[%s] process %d(%s) unlock after on cpu %d\n", __func__, current->pid, current->comm, smp_processor_id());
     return 0;
 }
 
@@ -86,16 +86,16 @@ ssize_t spinlock_lock_read(struct file *filp, char *buff, size_t count, loff_t *
     if (p->is_read)
         return 0;
 
-    printk("[%s] process %d(%s) lock before on cpu %d\n", __func__, current->pid, current->comm, get_cpu());
+    printk("[%s] process %d(%s) lock before on cpu %d\n", __func__, current->pid, current->comm, smp_processor_id());
     spin_lock(&myspinlock);
-    printk("[%s] process %d(%s) locking on cpu %d\n", __func__, current->pid, current->comm, get_cpu());
+    printk("[%s] process %d(%s) locking on cpu %d\n", __func__, current->pid, current->comm, smp_processor_id());
     j0 = jiffies;
     j1 = j0 + 20 * HZ;
     while (time_before (jiffies, j1));
     // 更新 j1 为实际值
     j1 = jiffies;
     spin_unlock(&myspinlock);
-    printk("[%s] process %d(%s) unlock after on cpu %d. j0:%lu j1:%lu\n", __func__, current->pid, current->comm, get_cpu(), j0, j1);
+    printk("[%s] process %d(%s) unlock after on cpu %d. j0:%lu j1:%lu\n", __func__, current->pid, current->comm, smp_processor_id(), j0, j1);
 
     len = sprintf(buf, "%9lu %9lu\n", j0, j1);
     if (copy_to_user(buff, buf, len)) {
@@ -110,7 +110,7 @@ static int __init lock_init(void)
 {
     int err;
     spin_lock_init(&myspinlock);
-	printk(KERN_ALERT "lock init\n");
+    printk(KERN_ALERT "lock init\n");
     proc_create("myspinlock_deadlock", 0, NULL, &spinlock_deadlock_fops);
     proc_create("myspinlock_lock", 0, NULL, &spinlock_lock_fops);
 
@@ -128,13 +128,13 @@ static int __init lock_init(void)
         return err;
     }
 
-	return 0;
+    return 0;
 }
 
 /* 模块卸载时调用 */
 static void __exit lock_exit(void)
 {
-	printk(KERN_ALERT "lock exit\n");
+    printk(KERN_ALERT "lock exit\n");
     remove_proc_entry("myspinlock_deadlock", NULL);
     remove_proc_entry("myspinlock_lock", NULL);
     free_irq(gpio_to_irq(BUTTON_PIN), NULL);
