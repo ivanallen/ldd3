@@ -40,7 +40,9 @@ spinlock_t myspinlock;
 
 irqreturn_t button_handler(int irq, void *dev)
 {
-    printk("[%s] process %d(%s) interrupted on cpu %d\n", __func__, current->pid, current->comm, smp_processor_id());
+    int cpu = get_cpu();
+    printk("[%s] process %d(%s) interrupted on cpu %d\n", __func__, current->pid, current->comm, cpu);
+    put_cpu();
     gpio_set_value(LED_PIN, !gpio_get_value(LED_PIN));
     return IRQ_HANDLED;
 }
@@ -66,13 +68,19 @@ int spinlock_release(struct inode *inode, struct file *filp)
 
 ssize_t spinlock_deadlock_read(struct file *filp, char *buff, size_t count, loff_t *ppos)
 {
-    printk("[%s] process %d(%s) lock before on cpu %d\n", __func__, current->pid, current->comm, smp_processor_id());
+    int cpu = get_cpu();
+    printk("[%s] process %d(%s) lock before on cpu %d\n", __func__, current->pid, current->comm, cpu);
+    put_cpu();
+
     spin_lock(&myspinlock);
     printk("[%s] process %d(%s) locking on cpu %d\n", __func__, current->pid, current->comm, smp_processor_id());
     // 此处会丢弃 cpu
     ssleep(20);
     spin_unlock(&myspinlock);
-    printk("[%s] process %d(%s) unlock after on cpu %d\n", __func__, current->pid, current->comm, smp_processor_id());
+
+    cpu = get_cpu();
+    printk("[%s] process %d(%s) unlock after on cpu %d\n", __func__, current->pid, current->comm, cpu);
+    put_cpu();
     return 0;
 }
 
@@ -82,11 +90,15 @@ ssize_t spinlock_lock_read(struct file *filp, char *buff, size_t count, loff_t *
     char buf[64];
     int len;
     struct process *p = filp->private_data;
+    int cpu;
 
     if (p->is_read)
         return 0;
 
-    printk("[%s] process %d(%s) lock before on cpu %d\n", __func__, current->pid, current->comm, smp_processor_id());
+    cpu = get_cpu();
+    printk("[%s] process %d(%s) lock before on cpu %d\n", __func__, current->pid, current->comm, cpu);
+    put_cpu();
+
     spin_lock(&myspinlock);
     printk("[%s] process %d(%s) locking on cpu %d\n", __func__, current->pid, current->comm, smp_processor_id());
     j0 = jiffies;
@@ -95,7 +107,10 @@ ssize_t spinlock_lock_read(struct file *filp, char *buff, size_t count, loff_t *
     // 更新 j1 为实际值
     j1 = jiffies;
     spin_unlock(&myspinlock);
-    printk("[%s] process %d(%s) unlock after on cpu %d. j0:%lu j1:%lu\n", __func__, current->pid, current->comm, smp_processor_id(), j0, j1);
+
+    cpu = get_cpu();
+    printk("[%s] process %d(%s) unlock after on cpu %d. j0:%lu j1:%lu\n", __func__, current->pid, current->comm, cpu, j0, j1);
+    put_cpu();
 
     len = sprintf(buf, "%9lu %9lu\n", j0, j1);
     if (copy_to_user(buff, buf, len)) {
