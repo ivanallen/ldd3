@@ -1,6 +1,7 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/fs.h>
+#include <linux/uaccess.h>
 #include <linux/proc_fs.h>
 #include <linux/spinlock.h>
 #include <linux/delay.h>
@@ -13,24 +14,54 @@ MODULE_LICENSE("Dual BSD/GPL");
 #define BUTTON_PIN 24
 #define LED_PIN 18
 
+struct process {
+    int is_read;
+};
+
 ssize_t spinlock_deadlock_read(struct file *filp, char *buff, size_t count, loff_t *ppos);
 ssize_t spinlock_lock_read(struct file *filp, char *buff, size_t count, loff_t *ppos);
+ssize_t spinlock_open(struct inode *inode, struct file *filp);
+ssize_t spinlock_release(struct inode *inode, struct file *filp);
 
 struct file_operations spinlock_deadlock_fops = {
+    .open = spinlock_open,
+    .release = spinlock_release,
     .read = spinlock_deadlock_read
 };
 
 struct file_operations spinlock_lock_fops = {
+    .open = spinlock_open,
+    .release = spinlock_release,
     .read = spinlock_lock_read
 };
 
 spinlock_t myspinlock;
+
 
 irqreturn_t button_handler(int irq, void *dev)
 {
     printk("[%s] process %d(%s) interrupted on cpu %d\n", __func__, current->pid, current->comm, get_cpu());
     gpio_set_value(LED_PIN, !gpio_get_value(LED_PIN));
     return IRQ_HANDLED;
+}
+
+ssize_t spinlock_open(struct inode *inode, struct file *filp)
+{
+    struct process *p = kmalloc(sizeof(struct process), GFP_KERNEL);
+    if (!p)
+        return -EFAULT;
+
+    p->is_read = 0;
+    filp->private_data = p;
+    return 0;
+}
+
+ssize_t spinlock_release(struct inode *inode, struct file *filp)
+{
+    if (filp->private_data)
+        kfree(filp->private_data);
+    filp->private_data = NULL;
+    return 0;
 }
 
 ssize_t spinlock_deadlock_read(struct file *filp, char *buff, size_t count, loff_t *ppos)
@@ -41,21 +72,38 @@ ssize_t spinlock_deadlock_read(struct file *filp, char *buff, size_t count, loff
     // 此处会丢弃 cpu
     ssleep(20);
     spin_unlock(&myspinlock);
-    printk("[%s] process %d(%s) lock after on cpu %d\n", __func__, current->pid, current->comm, get_cpu());
+    printk("[%s] process %d(%s) unlock after on cpu %d\n", __func__, current->pid, current->comm, get_cpu());
     return 0;
 }
 
 ssize_t spinlock_lock_read(struct file *filp, char *buff, size_t count, loff_t *ppos)
 {
-    unsigned long j;
+    unsigned long j0, j1;
+    char buf[64];
+    int len;
+    struct process *p = filp->private_data;
+
+    if (p->is_read)
+        return 0;
+
     printk("[%s] process %d(%s) lock before on cpu %d\n", __func__, current->pid, current->comm, get_cpu());
     spin_lock(&myspinlock);
     printk("[%s] process %d(%s) locking on cpu %d\n", __func__, current->pid, current->comm, get_cpu());
-    j = jiffies + 20 * HZ;
-    while (time_before (jiffies, j));
+    j0 = jiffies;
+    j1 = j0 + 20 * HZ;
+    while (time_before (jiffies, j1));
+    // 更新 j1 为实际值
+    j1 = jiffies;
     spin_unlock(&myspinlock);
-    printk("[%s] process %d(%s) lock after on cpu %d\n", __func__, current->pid, current->comm, get_cpu());
-    return 0;
+    printk("[%s] process %d(%s) unlock after on cpu %d. j0:%lu j1:%lu\n", __func__, current->pid, current->comm, get_cpu(), j0, j1);
+
+    len = sprintf(buf, "%9lu %9lu\n", j0, j1);
+    if (copy_to_user(buff, buf, len)) {
+        return -EFAULT;
+    }
+    *ppos = len;
+    p->is_read = 1;
+    return len;
 }
 
 static int __init lock_init(void)
@@ -73,7 +121,7 @@ static int __init lock_init(void)
     if (err) return err;
 
     enable_irq(gpio_to_irq(BUTTON_PIN));
-    err = request_irq(gpio_to_irq(BUTTON_PIN), button_handler, IRQF_TRIGGER_RISING, "LED Test", NULL);
+    err = request_irq(gpio_to_irq(BUTTON_PIN), button_handler, IRQF_TRIGGER_RISING, "led Test", NULL);
 
     if (err < 0) {
         printk("irq_request failed!\n");
