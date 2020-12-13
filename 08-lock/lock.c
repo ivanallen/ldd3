@@ -41,7 +41,9 @@ spinlock_t myspinlock;
 irqreturn_t button_handler(int irq, void *dev)
 {
     int cpu = get_cpu();
-    printk("[%s] process %d(%s) interrupted on cpu %d\n", __func__, current->pid, current->comm, cpu);
+    int is_in_interrupt = in_interrupt();
+
+    printk("[%s] process %d(%s) interrupted on cpu %d, in_interrupt:%d\n", __func__, current->pid, current->comm, cpu, is_in_interrupt);
     put_cpu();
     gpio_set_value(LED_PIN, !gpio_get_value(LED_PIN));
     return IRQ_HANDLED;
@@ -124,6 +126,7 @@ ssize_t spinlock_lock_read(struct file *filp, char *buff, size_t count, loff_t *
 static int __init lock_init(void)
 {
     int err;
+    unsigned int irqno;
     spin_lock_init(&myspinlock);
     printk(KERN_ALERT "lock init\n");
     proc_create("myspinlock_deadlock", 0, NULL, &spinlock_deadlock_fops);
@@ -135,8 +138,9 @@ static int __init lock_init(void)
     err = gpio_request_one(LED_PIN, GPIOF_OUT_INIT_LOW, "led request");
     if (err) return err;
 
-    enable_irq(gpio_to_irq(BUTTON_PIN));
-    err = request_irq(gpio_to_irq(BUTTON_PIN), button_handler, IRQF_TRIGGER_RISING, "led Test", NULL);
+    irqno = gpio_to_irq(BUTTON_PIN);
+    enable_irq(irqno);
+    err = request_irq(irqno, button_handler, IRQF_TRIGGER_RISING, "led test", NULL);
 
     if (err < 0) {
         printk("irq_request failed!\n");
