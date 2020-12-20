@@ -13,6 +13,9 @@ defalut:
 clean:
 	$(MAKE) -C $(LINUX_KERNEL_PATH) M=$(PWD) clean
 
+reader:reader.c
+	$(CC) -o $@ $^
+
 node:
 	sudo mknod /dev/myscullpipe0 c 231 0
 	sudo mknod /dev/myscullpipe1 c 231 1
