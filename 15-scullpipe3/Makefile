@@ -19,6 +19,9 @@ reader:reader.c
 mp:multiplex.c
 	$(CC) -o $@ $^
 
+mp2:multiplex2.c
+	$(CC) -o $@ $^
+
 node:
 	sudo mknod /dev/myscullpipe0 c 231 0
 	sudo mknod /dev/myscullpipe1 c 231 1
