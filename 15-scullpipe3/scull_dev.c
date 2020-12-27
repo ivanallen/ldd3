@@ -54,7 +54,7 @@ int scull_open(struct inode *inode, struct file *filp)
     struct scull_dev *dev;
     size_t minor = MINOR(filp->f_inode->i_rdev);
 
-    printk(KERN_NOTICE "scull_open minor:%u\n", minor);
+    printk(KERN_NOTICE "scull_open minor:%u process %d(%s)\n", minor, current->pid, current->comm);
     dev = container_of(inode->i_cdev, struct scull_dev, cdev);
     filp->private_data = dev;
 
@@ -75,7 +75,7 @@ int scull_release(struct inode *inode, struct file *filp)
 {
     struct scull_dev *dev = filp->private_data;
     size_t minor = MINOR(filp->f_inode->i_rdev);
-    printk(KERN_NOTICE "scull_release minor:%u\n", minor);
+    printk(KERN_NOTICE "scull_release minor:%u process %d(%s)\n", minor, current->pid, current->comm);
 
     down(&dev->sem);
 
@@ -96,6 +96,8 @@ int scull_release(struct inode *inode, struct file *filp)
 ssize_t scull_read(struct file *filp, char __user *buff, size_t count, loff_t *offp)
 {
     struct scull_dev *dev;
+    size_t minor = MINOR(filp->f_inode->i_rdev);
+    printk(KERN_NOTICE "scull_read minor:%u process %d(%s)\n", minor, current->pid, current->comm);
 
     dev = filp->private_data;
 
@@ -150,6 +152,8 @@ int spacefull(struct scull_dev *dev)
 ssize_t scull_write(struct file *filp, const char __user *buff, size_t count, loff_t *offp)
 {
     struct scull_dev *dev;
+    size_t minor = MINOR(filp->f_inode->i_rdev);
+    printk(KERN_NOTICE "scull_write minor:%u process %d(%s)\n", minor, current->pid, current->comm);
 
     dev = filp->private_data;
 
@@ -200,6 +204,9 @@ unsigned int scull_poll(struct file *filp, struct poll_table_struct *pt)
 {
     struct scull_dev *dev;
     unsigned int mask = 0;
+    size_t minor = MINOR(filp->f_inode->i_rdev);
+
+    printk(KERN_NOTICE "scull_poll minor:%u process %d(%s)\n", minor, current->pid, current->comm);
 
     dev = filp->private_data;
 
@@ -215,6 +222,8 @@ unsigned int scull_poll(struct file *filp, struct poll_table_struct *pt)
     if (!spacefull(dev))
         mask |= POLLOUT;
 
+    printk(KERN_NOTICE "scull_poll minor:%u process %d(%s) return mask:%u\n", minor, current->pid, current->comm, mask);
     up(&dev->sem);
+
     return mask;
 }
