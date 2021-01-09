@@ -77,7 +77,7 @@ int scull_open(struct inode *inode, struct file *filp)
     struct scull_dev *dev;
     size_t minor = MINOR(filp->f_inode->i_rdev);
 
-    printk(KERN_NOTICE "scull_open minor:%u\n", minor);
+    printk(KERN_NOTICE "scull_open minor:%zu\n", minor);
     dev = container_of(inode->i_cdev, struct scull_dev, cdev);
     filp->private_data = dev;
 
@@ -91,7 +91,7 @@ int scull_open(struct inode *inode, struct file *filp)
 int scull_release(struct inode *inode, struct file *filp)
 {
     size_t minor = MINOR(filp->f_inode->i_rdev);
-    printk(KERN_NOTICE "scull_release minor:%u\n", minor);
+    printk(KERN_NOTICE "scull_release minor:%zu\n", minor);
     return 0;
 }
 
@@ -127,8 +127,8 @@ ssize_t scull_read(struct file *filp, char __user *buff, size_t count, loff_t *o
 
     offset = *offp;
 
-    printk(KERN_NOTICE "[%s] user buff address:%px f_count:%d, f_pos:%llu, off:%llu, count:%u, minor:%u\n",
-            __func__, buff, filp->f_count.counter, filp->f_pos, offset, count, minor);
+    printk(KERN_NOTICE "[%s] user buff address:%px f_count:%lld, f_pos:%llu, off:%llu, count:%zu, minor:%zu\n",
+            __func__, buff, (long long)filp->f_count.counter, filp->f_pos, offset, count, minor);
 
     do {
         if (offset >= dev->size) {
@@ -172,7 +172,7 @@ ssize_t scull_read(struct file *filp, char __user *buff, size_t count, loff_t *o
             break;
         }
 
-        printk(KERN_NOTICE "copy_to_user %d bytes\n", count);
+        printk(KERN_NOTICE "copy_to_user %zd bytes\n", count);
 
         *offp += count;
         ret = count;
@@ -211,8 +211,8 @@ ssize_t scull_write(struct file *filp, const char __user *buff, size_t count, lo
 
     offset = *offp;
 
-    printk(KERN_NOTICE "[%s] user buff address:%px, f_count:%d, f_pos:%llu, off:%llu count:%u, minor:%u\n",
-            __func__, buff, filp->f_count.counter, filp->f_pos, offset, count, minor);
+    printk(KERN_NOTICE "[%s] user buff address:%px, f_count:%lld, f_pos:%llu, off:%llu count:%zu, minor:%zu\n",
+            __func__, buff, (long long)filp->f_count.counter, filp->f_pos, offset, count, minor);
 
     do {
         i = offset;
@@ -252,7 +252,7 @@ ssize_t scull_write(struct file *filp, const char __user *buff, size_t count, lo
             break;
         }
 
-        printk(KERN_NOTICE "copy_from_user %d bytes\n", count);
+        printk(KERN_NOTICE "copy_from_user %zd bytes\n", count);
 
         *offp += count;
         dev->size = *offp;

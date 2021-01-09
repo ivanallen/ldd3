@@ -115,7 +115,7 @@ static int scull_open(struct inode *inode, struct file *filp)
     size_t major = MAJOR(inode->i_rdev);
     size_t minor = MINOR(inode->i_rdev);
 
-    printk(KERN_NOTICE "scull_open:(%u, %u)\n", major, minor);
+    printk(KERN_NOTICE "scull_open:(%zu, %zu)\n", major, minor);
     /*
      * 问题：如果知道某结构体成员字段地址，
      * 能否知道该结构体首地址呢？
@@ -143,7 +143,7 @@ static int scull_release(struct inode *inode, struct file *filp)
 {
     size_t major = MAJOR(inode->i_rdev);
     size_t minor = MINOR(inode->i_rdev);
-    printk(KERN_NOTICE "scull_release:(%u, %u)\n", major, minor);
+    printk(KERN_NOTICE "scull_release:(%zu, %zu)\n", major, minor);
     return 0;
 }
 
@@ -160,8 +160,8 @@ static ssize_t scull_read(struct file *filp, char __user *buff, size_t count, lo
     dev = filp->private_data;
     offset = *offp;
 
-    printk(KERN_NOTICE "[%s] user buff address:%p kernel buff address:%p, f_count:%d, f_pos:%llu, off:%llu count:%u, minor:%u, dev->size:%u\n",
-            __func__, buff, dev->buf[minor], filp->f_count.counter, filp->f_pos, offset, count, minor, dev->size[minor]);
+    printk(KERN_NOTICE "[%s] user buff address:%p kernel buff address:%p, f_count:%lld, f_pos:%llu, off:%llu count:%zu, minor:%zu, dev->size:%zu\n",
+            __func__, buff, dev->buf[minor], (long long)filp->f_count.counter, filp->f_pos, offset, count, minor, dev->size[minor]);
 
     if (offset + count >= dev->size[minor])
         count = dev->size[minor] - offset;
@@ -187,8 +187,8 @@ static ssize_t scull_write(struct file *filp, const char __user *buff, size_t co
     dev = filp->private_data;
     offset = *offp;
 
-    printk(KERN_NOTICE "[%s] user buff address:%p kernel buff address:%p, f_count:%d, f_pos:%llu, off:%llu count:%u, minor:%u, dev->size:%u\n",
-            __func__, buff, dev->buf[minor], filp->f_count.counter, filp->f_pos, offset, count, minor, dev->size[minor]);
+    printk(KERN_NOTICE "[%s] user buff address:%p kernel buff address:%p, f_count:%lld, f_pos:%llu, off:%llu count:%zu, minor:%zu, dev->size:%zu\n",
+            __func__, buff, dev->buf[minor], (long long)filp->f_count.counter, filp->f_pos, offset, count, minor, dev->size[minor]);
 
     if (offset + count > MAX_BUF_SIZE)
         count = MAX_BUF_SIZE - offset;

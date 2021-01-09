@@ -54,7 +54,7 @@ int scull_open(struct inode *inode, struct file *filp)
     struct scull_dev *dev;
     size_t minor = MINOR(filp->f_inode->i_rdev);
 
-    printk(KERN_NOTICE "scull_open minor:%u\n", minor);
+    printk(KERN_NOTICE "scull_open minor:%zu\n", minor);
     dev = container_of(inode->i_cdev, struct scull_dev, cdev);
     filp->private_data = dev;
 
@@ -75,7 +75,7 @@ int scull_release(struct inode *inode, struct file *filp)
 {
     struct scull_dev *dev = filp->private_data;
     size_t minor = MINOR(filp->f_inode->i_rdev);
-    printk(KERN_NOTICE "scull_release minor:%u\n", minor);
+    printk(KERN_NOTICE "scull_release minor:%zu\n", minor);
 
     down(&dev->sem);
 
