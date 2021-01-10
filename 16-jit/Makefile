@@ -12,6 +12,9 @@ defalut:
 clean:
 	$(MAKE) -C $(LINUX_KERNEL_PATH) M=$(PWD) clean
 
+load50:load50.c
+	$(CC) -o $@ $^
+
 ins:
 	sudo insmod myjit.ko
 
