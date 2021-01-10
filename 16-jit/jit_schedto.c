@@ -24,7 +24,7 @@ void jit_schedto_seq_stop(struct seq_file *s, void *v)
     return;
 }
 
-ssize_t jit_schedto_seq_show(struct seq_file *s, void *v)
+int jit_schedto_seq_show(struct seq_file *s, void *v)
 {
     unsigned long j0, j1; /* jiffies */
     int delay = HZ;

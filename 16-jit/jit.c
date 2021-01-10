@@ -34,7 +34,7 @@ static int __init jit_init(void)
 {
     int err;
     unsigned int irqno;
-    printk(KERN_ALERT "jit init\n");
+    printk(KERN_ALERT "jit init, HZ=%d\n", HZ);
     proc_create("jit_currenttime", 0, NULL, &jit_currenttime_fops);
     proc_create("jit_busy", 0, NULL, &jit_busy_fops);
     proc_create("jit_sched", 0, NULL, &jit_sched_fops);
