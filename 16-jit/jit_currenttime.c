@@ -27,7 +27,7 @@ void jit_currenttime_seq_stop(struct seq_file *s, void *v)
     return;
 }
 
-#if LINUX_VERSION_CODE > 0x00050000
+#if LINUX_VERSION_CODE > KERNEL_VERSION(5,4,0)
 int jit_currenttime_seq_show(struct seq_file *s, void *v)
 {
     struct timespec64 tv1;
