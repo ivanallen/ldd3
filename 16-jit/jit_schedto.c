@@ -27,13 +27,13 @@ void jit_schedto_seq_stop(struct seq_file *s, void *v)
 int jit_schedto_seq_show(struct seq_file *s, void *v)
 {
     unsigned long j0, j1; /* jiffies */
-    int delay = HZ;
+    int delay = 4*HZ;
 
     j0 = jiffies;
     j1 = j0 + delay;
 
     set_current_state(TASK_INTERRUPTIBLE);
-            schedule_timeout (delay);
+    schedule_timeout(delay);
 
     j1 = jiffies;
 
