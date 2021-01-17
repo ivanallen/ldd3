@@ -1,5 +1,5 @@
 ifneq ($(KERNELRELEASE),)
-	myjit-objs:=jit.o jit_currenttime.o jit_busy.o jit_sched.o jit_schedto.o
+	myjit-objs:=jit.o jit_currenttime.o jit_busy.o jit_sched.o jit_schedto.o jit_timer.o
 	obj-m:=myjit.o
 else
 	PWD:=$(shell pwd)

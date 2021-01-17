@@ -18,6 +18,7 @@ extern struct file_operations jit_currenttime_fops;
 extern struct file_operations jit_busy_fops;
 extern struct file_operations jit_sched_fops;
 extern struct file_operations jit_schedto_fops;
+extern struct file_operations jit_timer_fops;
 
 irqreturn_t button_handler(int irq, void *dev)
 {
@@ -39,6 +40,7 @@ static int __init jit_init(void)
     proc_create("jit_busy", 0, NULL, &jit_busy_fops);
     proc_create("jit_sched", 0, NULL, &jit_sched_fops);
     proc_create("jit_schedto", 0, NULL, &jit_schedto_fops);
+    proc_create("jit_timer", 0, NULL, &jit_timer_fops);
 
     err = gpio_request_one(BUTTON_PIN, GPIOF_IN, "button request");
     if (err) return err;
@@ -66,6 +68,7 @@ static void __exit jit_exit(void)
     remove_proc_entry("jit_busy", NULL);
     remove_proc_entry("jit_sched", NULL);
     remove_proc_entry("jit_schedto", NULL);
+    remove_proc_entry("jit_timer", NULL);
     free_irq(gpio_to_irq(BUTTON_PIN), NULL);
     gpio_free(BUTTON_PIN);
     gpio_free(LED_PIN);
